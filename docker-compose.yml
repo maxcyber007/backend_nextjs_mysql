@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+  nextjs:
+    build: .
+    container_name: backend_nextjs_mysql
+    restart: unless-stopped
+
+    ports:
+      - "3001:3000"
