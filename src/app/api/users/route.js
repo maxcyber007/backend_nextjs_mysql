@@ -6,9 +6,25 @@ import db from "@/lib/db";
 // GET
 //========================================
 export async function GET() {
-return NextResponse.json(
-      { error: "GET" }
+  try {
+    const [rows] = await db.query(
+      "SELECT * FROM tbl_users ORDER BY id ASC"
     );
+
+    return NextResponse.json(rows, {
+      status: 200,
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+
+  }
 }
 
 //========================================
