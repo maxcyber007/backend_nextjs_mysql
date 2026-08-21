@@ -86,12 +86,13 @@ export async function GET(request, { params }) {
 //========================================
 // PUT User By ID
 //========================================
-export async function PUT(request) {
+export async function PUT(request, { params }) {
 
   try {
 
+    const { id } = await params;
+    
     const {
-      id,
       firstname,
       lastname,
       username,
