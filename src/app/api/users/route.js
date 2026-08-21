@@ -5,36 +5,20 @@ import db from "@/lib/db";
 //========================================
 // CORS
 //========================================
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://www.cmtc.ac.th",
-  "https://cmtc.ac.th",
-];
-
-function getCorsHeaders(request) {
-
-  const origin = request.headers.get("origin");
-
-  const headers = {
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  };
-
-  if (allowedOrigins.includes(origin)) {
-    headers["Access-Control-Allow-Origin"] = origin;
-  }
-
-  return headers;
-}
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
 
 //========================================
 // OPTIONS
 //========================================
-export async function OPTIONS(request) {
+export async function OPTIONS() {
 
   return new NextResponse(null, {
     status: 204,
-    headers: getCorsHeaders(request),
+    headers: corsHeaders,
   });
 
 }
@@ -42,9 +26,7 @@ export async function OPTIONS(request) {
 //========================================
 // GET
 //========================================
-export async function GET(request) {
-
-  const corsHeaders = getCorsHeaders(request);
+export async function GET() {
 
   try {
 
@@ -52,10 +34,13 @@ export async function GET(request) {
       "SELECT * FROM tbl_users ORDER BY id ASC"
     );
 
-    return NextResponse.json(rows, {
-      status: 200,
-      headers: corsHeaders,
-    });
+    return NextResponse.json(
+      rows,
+      {
+        status: 200,
+        headers: corsHeaders,
+      }
+    );
 
   } catch (error) {
 
@@ -80,8 +65,6 @@ export async function GET(request) {
 //========================================
 export async function POST(request) {
 
-  const corsHeaders = getCorsHeaders(request);
-
   try {
 
     const {
@@ -91,6 +74,9 @@ export async function POST(request) {
       password
     } = await request.json();
 
+    //========================================
+    // ตรวจสอบข้อมูล
+    //========================================
     if (!firstname || !lastname || !username || !password) {
 
       return NextResponse.json(
@@ -105,8 +91,14 @@ export async function POST(request) {
 
     }
 
+    //========================================
+    // Hash Password
+    //========================================
     const hashPassword = await bcrypt.hash(password, 10);
 
+    //========================================
+    // INSERT
+    //========================================
     const [result] = await db.execute(
       `INSERT INTO tbl_users
       (
@@ -158,8 +150,6 @@ export async function POST(request) {
 //========================================
 export async function PUT(request) {
 
-  const corsHeaders = getCorsHeaders(request);
-
   try {
 
     const {
@@ -170,6 +160,9 @@ export async function PUT(request) {
       password
     } = await request.json();
 
+    //========================================
+    // ตรวจสอบ ID
+    //========================================
     if (!id) {
 
       return NextResponse.json(
@@ -188,6 +181,7 @@ export async function PUT(request) {
 
     //========================================
     // มี Password
+    // Update Password
     //========================================
     if (password) {
 
@@ -210,12 +204,13 @@ export async function PUT(request) {
         ]
       );
 
-    } else {
+    }
 
-      //========================================
-      // ไม่มี Password
-      // ไม่ Update Password
-      //========================================
+    //========================================
+    // ไม่มี Password
+    // ไม่ Update Password
+    //========================================
+    else {
 
       [result] = await db.execute(
         `UPDATE tbl_users
@@ -234,6 +229,9 @@ export async function PUT(request) {
 
     }
 
+    //========================================
+    // User ไม่พบ
+    //========================================
     if (result.affectedRows === 0) {
 
       return NextResponse.json(
@@ -248,6 +246,9 @@ export async function PUT(request) {
 
     }
 
+    //========================================
+    // Success
+    //========================================
     return NextResponse.json(
       {
         message: "Update Success"
