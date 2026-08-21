@@ -95,6 +95,129 @@ export async function GET(request, { params }) {
 }
 
 //========================================
+// PUT
+//========================================
+export async function PUT(request) {
+
+  const corsHeaders = getCorsHeaders(request);
+
+  try {
+
+    const {
+      id,
+      firstname,
+      lastname,
+      username,
+      password
+    } = await request.json();
+
+    if (!id) {
+
+      return NextResponse.json(
+        {
+          error: "User ID is required"
+        },
+        {
+          status: 400,
+          headers: corsHeaders,
+        }
+      );
+
+    }
+
+    let result;
+
+    //========================================
+    // มี Password
+    //========================================
+    if (password) {
+
+      const hashPassword = await bcrypt.hash(password, 10);
+
+      [result] = await db.execute(
+        `UPDATE tbl_users
+         SET
+           firstname=?,
+           lastname=?,
+           username=?,
+           password=?
+         WHERE id=?`,
+        [
+          firstname,
+          lastname,
+          username,
+          hashPassword,
+          id,
+        ]
+      );
+
+    } else {
+
+      //========================================
+      // ไม่มี Password
+      // ไม่ Update Password
+      //========================================
+
+      [result] = await db.execute(
+        `UPDATE tbl_users
+         SET
+           firstname=?,
+           lastname=?,
+           username=?
+         WHERE id=?`,
+        [
+          firstname,
+          lastname,
+          username,
+          id,
+        ]
+      );
+
+    }
+
+    if (result.affectedRows === 0) {
+
+      return NextResponse.json(
+        {
+          error: "User not found"
+        },
+        {
+          status: 404,
+          headers: corsHeaders,
+        }
+      );
+
+    }
+
+    return NextResponse.json(
+      {
+        message: "Update Success"
+      },
+      {
+        status: 200,
+        headers: corsHeaders,
+      }
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    return NextResponse.json(
+      {
+        error: "Internal Server Error"
+      },
+      {
+        status: 500,
+        headers: corsHeaders,
+      }
+    );
+
+  }
+
+}
+
+//========================================
 // DELETE User By ID
 //========================================
 export async function DELETE(request, { params }) {
