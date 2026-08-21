@@ -3,16 +3,58 @@ import bcrypt from "bcrypt";
 import db from "@/lib/db";
 
 //========================================
+// CORS
+//========================================
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://www.cmtc.ac.th",
+  "https://cmtc.ac.th",
+];
+
+function getCorsHeaders(request) {
+
+  const origin = request.headers.get("origin");
+
+  const headers = {
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+
+  if (allowedOrigins.includes(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin;
+  }
+
+  return headers;
+}
+
+//========================================
+// OPTIONS
+//========================================
+export async function OPTIONS(request) {
+
+  return new NextResponse(null, {
+    status: 204,
+    headers: getCorsHeaders(request),
+  });
+
+}
+
+//========================================
 // GET
 //========================================
-export async function GET() {
+export async function GET(request) {
+
+  const corsHeaders = getCorsHeaders(request);
+
   try {
+
     const [rows] = await db.query(
       "SELECT * FROM tbl_users ORDER BY id ASC"
     );
 
     return NextResponse.json(rows, {
       status: 200,
+      headers: corsHeaders,
     });
 
   } catch (error) {
@@ -20,17 +62,25 @@ export async function GET() {
     console.error(error);
 
     return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
+      {
+        error: "Internal Server Error"
+      },
+      {
+        status: 500,
+        headers: corsHeaders,
+      }
     );
 
   }
+
 }
 
 //========================================
 // POST
 //========================================
 export async function POST(request) {
+
+  const corsHeaders = getCorsHeaders(request);
 
   try {
 
@@ -40,6 +90,20 @@ export async function POST(request) {
       username,
       password
     } = await request.json();
+
+    if (!firstname || !lastname || !username || !password) {
+
+      return NextResponse.json(
+        {
+          error: "กรุณากรอกข้อมูลให้ครบ"
+        },
+        {
+          status: 400,
+          headers: corsHeaders,
+        }
+      );
+
+    }
 
     const hashPassword = await bcrypt.hash(password, 10);
 
@@ -67,6 +131,7 @@ export async function POST(request) {
       },
       {
         status: 201,
+        headers: corsHeaders,
       }
     );
 
@@ -75,8 +140,13 @@ export async function POST(request) {
     console.error(error);
 
     return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
+      {
+        error: "Internal Server Error"
+      },
+      {
+        status: 500,
+        headers: corsHeaders,
+      }
     );
 
   }
@@ -88,6 +158,8 @@ export async function POST(request) {
 //========================================
 export async function PUT(request) {
 
+  const corsHeaders = getCorsHeaders(request);
+
   try {
 
     const {
@@ -98,11 +170,25 @@ export async function PUT(request) {
       password
     } = await request.json();
 
+    if (!id) {
+
+      return NextResponse.json(
+        {
+          error: "User ID is required"
+        },
+        {
+          status: 400,
+          headers: corsHeaders,
+        }
+      );
+
+    }
+
     let result;
 
-    // ========================================
-    // กรณีมี password → update password ด้วย
-    // ========================================
+    //========================================
+    // มี Password
+    //========================================
     if (password) {
 
       const hashPassword = await bcrypt.hash(password, 10);
@@ -124,11 +210,12 @@ export async function PUT(request) {
         ]
       );
 
-    } 
-    // ========================================
-    // กรณีไม่มี password → ไม่ update password
-    // ========================================
-    else {
+    } else {
+
+      //========================================
+      // ไม่มี Password
+      // ไม่ Update Password
+      //========================================
 
       [result] = await db.execute(
         `UPDATE tbl_users
@@ -147,22 +234,27 @@ export async function PUT(request) {
 
     }
 
-    // ========================================
-    // ตรวจสอบ User
-    // ========================================
     if (result.affectedRows === 0) {
+
       return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
+        {
+          error: "User not found"
+        },
+        {
+          status: 404,
+          headers: corsHeaders,
+        }
       );
+
     }
 
     return NextResponse.json(
       {
-        message: "Update Success",
+        message: "Update Success"
       },
       {
         status: 200,
+        headers: corsHeaders,
       }
     );
 
@@ -171,8 +263,13 @@ export async function PUT(request) {
     console.error(error);
 
     return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
+      {
+        error: "Internal Server Error"
+      },
+      {
+        status: 500,
+        headers: corsHeaders,
+      }
     );
 
   }
