@@ -56,7 +56,7 @@ export async function POST(request) {
     //========================================
     // ค้นหาผู้ใช้
     //========================================
-    const [rows] = await db.execute(
+    const [rows] = await db.query(
       "SELECT * FROM tbl_users WHERE username = ?",
       [username]
     );
