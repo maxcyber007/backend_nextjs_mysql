@@ -98,29 +98,58 @@ export async function PUT(request) {
       password
     } = await request.json();
 
-    let hashPassword = password;
+    let result;
 
+    // ========================================
+    // กรณีมี password → update password ด้วย
+    // ========================================
     if (password) {
-      hashPassword = await bcrypt.hash(password, 10);
+
+      const hashPassword = await bcrypt.hash(password, 10);
+
+      [result] = await db.execute(
+        `UPDATE tbl_users
+         SET
+           firstname=?,
+           lastname=?,
+           username=?,
+           password=?
+         WHERE id=?`,
+        [
+          firstname,
+          lastname,
+          username,
+          hashPassword,
+          id,
+        ]
+      );
+
+    } 
+    // ========================================
+    // กรณีไม่มี password → ไม่ update password
+    // ========================================
+    else {
+
+      [result] = await db.execute(
+        `UPDATE tbl_users
+         SET
+           firstname=?,
+           lastname=?,
+           username=?
+         WHERE id=?`,
+        [
+          firstname,
+          lastname,
+          username,
+          id,
+        ]
+      );
+
     }
 
-    const [result] = await db.execute(
-      `UPDATE tbl_users
-      SET
-        firstname=?,
-        lastname=?,
-        username=?,
-        password=?
-      WHERE id=?`,
-      [
-        firstname,
-        lastname,
-        username,
-        hashPassword,
-        id,
-      ]
-    );
-
+    // ========================================
+    // ตรวจสอบ User
+    // ========================================
     if (result.affectedRows === 0) {
       return NextResponse.json(
         { error: "User not found" },
