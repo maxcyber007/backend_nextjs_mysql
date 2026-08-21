@@ -32,7 +32,7 @@ export async function GET(request, { params }) {
 
     const { id } = await params;
 
-    const [rows] = await db.execute(
+    const [rows] = await db.query(
       "SELECT * FROM tbl_users WHERE id = ?",
       [id]
     );
